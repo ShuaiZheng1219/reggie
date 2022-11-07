@@ -13,6 +13,8 @@ import com.zs.reggie.service.SetMealService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -36,6 +38,7 @@ public class SetMealController {
      * @param setmealDto
      * @return
      */
+    @CacheEvict(value = "setmealCache",allEntries = true)
     @PostMapping
     public R<String> addSetMeal(@RequestBody SetmealDto setmealDto) {
         setMealService.saveWithDish(setmealDto);
@@ -91,11 +94,14 @@ public class SetMealController {
      * @param setmealDto
      * @return
      */
+    @CacheEvict(value = "setmealCache",allEntries = true)
     @PutMapping
     public R<String> updateSetMealWithDishs(@RequestBody SetmealDto setmealDto){
         setMealService.updateSetMealWithDishs(setmealDto);
         return R.success("修改成功");
     }
+
+    @CacheEvict(value = "setmealCache",allEntries = true) //表示清除setmealCache中所有缓存
     @DeleteMapping
     public R<String> deleteSetMeal(long[] ids){
         for(int i =0;i<ids.length;i++){
@@ -116,12 +122,13 @@ public class SetMealController {
         }
         return R.success("售卖状态修改成功");
     }
-
+    //Cacheable表示先从缓存中取数据，如果没有在查询数据库
+    @Cacheable(value = "setmealCache",key = "#setmeal.categoryId + '_' + #setmeal.status")
     @GetMapping("/list")
-    public R<List<Setmeal>> list(Long categoryId){
+    public R<List<Setmeal>> list(Setmeal setmeal){
         //log.info("categoryId={}",categoryId);
         LambdaQueryWrapper<Setmeal> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(Setmeal::getCategoryId,categoryId);
+        queryWrapper.eq(Setmeal::getCategoryId,setmeal.getCategoryId());
         queryWrapper.orderByDesc(Setmeal::getUpdateTime);
         List<Setmeal> list = setMealService.list(queryWrapper);
         return R.success(list);
