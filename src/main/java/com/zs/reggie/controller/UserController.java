@@ -8,6 +8,7 @@ import com.zs.reggie.utils.SendMailUtil;
 import com.zs.reggie.utils.ValidateCodeUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @RestController
@@ -23,6 +25,9 @@ import java.util.Map;
 public class UserController {
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private RedisTemplate<Object,Object> redisTemplate;
 
     /**
      * 发送验证码
@@ -41,7 +46,9 @@ public class UserController {
             log.info("您的验证码为{},请妥善保管",code);
             //SendMailUtil.sendEmail(email,code);
             //保存到session
-            request.getSession().setAttribute(email,code);
+            //request.getSession().setAttribute(email,code);
+            //将生成的验证码放入到redis中，并设置有效期为1分钟
+            redisTemplate.opsForValue().set(email,code,1, TimeUnit.MINUTES);
             return R.success("发送成功");
         }
         return R.error("发送失败");
@@ -58,7 +65,11 @@ public class UserController {
         //log.info("phone:{},code:{}",map.get("phone"),map.get("code"));
         String email = map.get("email");
         if(email!=null){
-            String code = (String) request.getSession().getAttribute(email);
+            //获取验证码
+            //开始为session中获取
+            //String code = (String) request.getSession().getAttribute(email);
+            //改为从reids中获取
+            String code = (String) redisTemplate.opsForValue().get(email);
             if(code!=null && code.equals(map.get("code"))){
                 LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
                 queryWrapper.eq(User::getEmail,email);
