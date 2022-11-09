@@ -43,7 +43,11 @@ public class LoginCheckFilter implements Filter {
                 "/front/**",
                 "/common/**",
                 "/user/login",//移动端登录
-                "/user/sendMsg"//发送短信
+                "/user/sendMsg",//发送短信
+                "/doc.html",
+                "/webjars/**",
+                "/swagger-resources",
+                "/v2/api-docs"
         };
         //2、判断本次求情是否需要处理，如果不需要处理，则直接放行
         boolean check = check(urls,requestURI);

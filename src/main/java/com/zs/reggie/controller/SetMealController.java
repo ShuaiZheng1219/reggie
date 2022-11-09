@@ -10,6 +10,10 @@ import com.zs.reggie.pojo.SetmealDish;
 import com.zs.reggie.service.CategoryService;
 import com.zs.reggie.service.SetMealDishService;
 import com.zs.reggie.service.SetMealService;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiImplicitParam;
+import io.swagger.annotations.ApiImplicitParams;
+import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +27,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @RestController
 @RequestMapping("/setmeal")
+@Api(tags = "套餐相关接口")
 public class SetMealController {
     @Autowired
     private SetMealService setMealService;
@@ -40,6 +45,7 @@ public class SetMealController {
      */
     @CacheEvict(value = "setmealCache",allEntries = true)
     @PostMapping
+    @ApiOperation("新增套餐")
     public R<String> addSetMeal(@RequestBody SetmealDto setmealDto) {
         setMealService.saveWithDish(setmealDto);
         return R.success("保存成功");
@@ -53,6 +59,12 @@ public class SetMealController {
      * @return
      */
     @GetMapping("/page")
+    @ApiOperation("套餐分页查询")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "page", value = "页码", required = true),
+            @ApiImplicitParam(name = "pageSize", value = "每页记录数", required = true),
+            @ApiImplicitParam(name = "name", value = "套餐名称", required = false)
+    })
     public R<Page> page(int page, int pageSize, String name) {
         Page<Setmeal> pageInfo = new Page<>(page, pageSize);
         Page<SetmealDto> dtoPageInfo = new Page<>();
@@ -84,6 +96,7 @@ public class SetMealController {
      * @return
      */
     @GetMapping("/{id}")
+    @ApiOperation("根据id查询套餐")
     public R<SetmealDto> querySetMealById(@PathVariable("id") Long id){
         SetmealDto setmealDto = setMealService.querySetMealById(id);
         return R.success(setmealDto);
@@ -96,6 +109,7 @@ public class SetMealController {
      */
     @CacheEvict(value = "setmealCache",allEntries = true)
     @PutMapping
+    @ApiOperation("修改套餐")
     public R<String> updateSetMealWithDishs(@RequestBody SetmealDto setmealDto){
         setMealService.updateSetMealWithDishs(setmealDto);
         return R.success("修改成功");
@@ -103,6 +117,7 @@ public class SetMealController {
 
     @CacheEvict(value = "setmealCache",allEntries = true) //表示清除setmealCache中所有缓存
     @DeleteMapping
+    @ApiOperation("删除套餐")
     public R<String> deleteSetMeal(long[] ids){
         for(int i =0;i<ids.length;i++){
             setMealService.removeById(ids[i]);
@@ -112,7 +127,9 @@ public class SetMealController {
         }
         return R.success("删除成功");
     }
+
     @PostMapping("/status/{status}")
+    @ApiOperation("修改套餐状态")
     public R<String> statusHandler(@PathVariable("status")int status, long[] ids){
         //log.info("status:{}",status);
         for(int i=0;i<ids.length;i++){
@@ -125,6 +142,7 @@ public class SetMealController {
     //Cacheable表示先从缓存中取数据，如果没有在查询数据库
     @Cacheable(value = "setmealCache",key = "#setmeal.categoryId + '_' + #setmeal.status")
     @GetMapping("/list")
+    @ApiOperation("根据分类查询套餐列表")
     public R<List<Setmeal>> list(Setmeal setmeal){
         //log.info("categoryId={}",categoryId);
         LambdaQueryWrapper<Setmeal> queryWrapper = new LambdaQueryWrapper<>();
